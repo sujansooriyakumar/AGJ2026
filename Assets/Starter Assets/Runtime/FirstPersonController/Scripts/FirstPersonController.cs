@@ -44,8 +44,9 @@ namespace StarterAssets
         public LayerMask GroundLayers;
 
         [Header("Double Jump")]
-        [Tooltip("Whether the air jump has been used since last touching the ground or a wall")]
-        public bool doubleJumpUsed = false;
+        [Tooltip("How many extra jumps the player can make in the air. 1 = double jump, 2 = triple jump, 0 = none")]
+        [Min(0)]
+        public int doubleJumpCount = 1;
 
         [Header("Dash")]
         [Tooltip("Speed of the dash in m/s")]
@@ -125,6 +126,9 @@ namespace StarterAssets
         private float _verticalVelocity;
         private float _terminalVelocity = 53.0f;
 
+        // air jumps left before touching the ground or a wall again
+        private int _airJumpsRemaining;
+
         // dash
         private bool _isDashing;
         private float _dashTimer;
@@ -164,6 +168,9 @@ namespace StarterAssets
 
         /// <summary>Seconds until the dash is ready again (0 when ready). Handy for a UI cooldown indicator.</summary>
         public float DashCooldownRemaining => Mathf.Max(_dashCooldownTimer, 0f);
+
+        /// <summary>Air jumps left before the player needs to touch the ground or a wall. Handy for UI.</summary>
+        public int AirJumpsRemaining => _airJumpsRemaining;
 
         /// <summary>True while a dash is in progress.</summary>
         public bool IsDashing => _isDashing;
@@ -207,6 +214,9 @@ namespace StarterAssets
             {
                 LedgeLayers = LayerMask.GetMask("Ledge");
             }
+
+            // start with a full set of air jumps
+            _airJumpsRemaining = doubleJumpCount;
 
             // reset our timeouts on start
             _jumpTimeoutDelta = JumpTimeout;
@@ -307,7 +317,7 @@ namespace StarterAssets
             _isWallRunning = false;
             _isVerticalWallRunning = false;
             _wallJumpVelocity = Vector3.zero;
-            doubleJumpUsed = false;
+            _airJumpsRemaining = doubleJumpCount;
 
             // disable the controller so it doesn't collide with the ledge edge while we move the transform directly
             _controller.enabled = false;
@@ -513,8 +523,8 @@ namespace StarterAssets
                 // reset the fall timeout timer
                 _fallTimeoutDelta = FallTimeout;
 
-                // landed, so the double jump is available again
-                doubleJumpUsed = false;
+                // landed, so all air jumps are available again
+                _airJumpsRemaining = doubleJumpCount;
 
                 // stop our velocity dropping infinitely when grounded
                 if (_verticalVelocity < 0.0f)
@@ -562,8 +572,8 @@ namespace StarterAssets
                     _verticalVelocity = 0f;
                 }
 
-                // touching a wall refreshes the double jump, so you can chain walls
-                if (_isWallRunning || _isVerticalWallRunning) doubleJumpUsed = false;
+                // touching a wall refreshes the air jumps, so you can chain walls
+                if (_isWallRunning || _isVerticalWallRunning) _airJumpsRemaining = doubleJumpCount;
 
                 if (_input.jump)
                 {
@@ -583,11 +593,11 @@ namespace StarterAssets
                         _isWallRunning = false;
                         jumped = true;
                     }
-                    else if (!doubleJumpUsed)
+                    else if (_airJumpsRemaining > 0)
                     {
-                        // double jump
+                        // air jump (double, triple, ... depending on doubleJumpCount)
                         _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
-                        doubleJumpUsed = true;
+                        _airJumpsRemaining--;
                         jumped = true;
                     }
                 }
