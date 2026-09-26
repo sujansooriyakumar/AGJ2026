@@ -1,4 +1,6 @@
 ﻿using UnityEngine;
+using UnityEngine.Events;
+
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -115,6 +117,13 @@ namespace StarterAssets
         public float TopClamp = 90.0f;
         [Tooltip("How far in degrees can you move the camera down")]
         public float BottomClamp = -90.0f;
+
+        [Header("Events")]
+        public UnityEvent OnDashStart;
+        public UnityEvent OnDashComplete;
+
+        public UnityEvent OnSprintStart;
+        public UnityEvent OnSprintComplete;
 
         // cinemachine
         private float _cinemachineTargetPitch;
@@ -399,6 +408,7 @@ namespace StarterAssets
             // start a dash if pressed and off cooldown
             if (_input.dash && !_isDashing && _dashCooldownTimer <= 0f)
             {
+                OnDashStart?.Invoke();
                 _isDashing = true;
                 _dashTimer = dashDuration;
                 _dashCooldownTimer = dashCooldown;
@@ -424,6 +434,7 @@ namespace StarterAssets
                 if (_dashTimer <= 0f)
                 {
                     _isDashing = false;
+                    OnDashComplete?.Invoke();
                 }
             }
         }
@@ -467,7 +478,15 @@ namespace StarterAssets
 
             // set target speed based on move speed, sprint speed and if sprint is pressed
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
+            if (_input.sprint && _input.move.magnitude > 0.0f)
+            {
+                OnSprintStart?.Invoke();
+            }
 
+            if (!_input.sprint || _input.move.magnitude <= 0.0f) 
+            {
+                OnSprintComplete?.Invoke();
+            }
             // if there is no input, set the target speed to 0
             if (_input.move == Vector2.zero) targetSpeed = 0.0f;
 
