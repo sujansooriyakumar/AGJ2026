@@ -93,6 +93,8 @@ namespace StarterAssets
         public float wallJumpSideForce = 7f;
         [Tooltip("How quickly the wall jump push fades out (m/s per second)")]
         public float wallJumpDecay = 10f;
+        [Tooltip("Time after a wall jump before a new wall run can start. Stops the player instantly re-latching (and paying AP again) on the wall they just left")]
+        public float wallReattachDelay = 0.3f;
 
         [Header("Vertical Wallrun")]
         [Tooltip("If the character is facing a wall directly in front")]
@@ -155,6 +157,7 @@ namespace StarterAssets
         private bool _wallOnRight;
         private Vector3 _wallNormal;
         private Vector3 _wallJumpVelocity;
+        private float _wallReattachTimer;
 
         // vertical wall run
         private bool _isVerticalWallRunning;
@@ -172,8 +175,14 @@ namespace StarterAssets
         private CharacterController _controller;
         private StarterAssetsInputs _input;
         private GameObject _mainCamera;
-
         private const float _threshold = 0.01f;
+        private ActionPointManager actionPointManager;
+
+        /// <summary>Current action points (0 if no ActionPointManager was found).</summary>
+        public int CurrentAP => actionPointManager != null ? actionPointManager.GetAP() : 0;
+
+        /// <summary>True if the player has enough AP for an ability.</summary>
+        private bool HasAP => CurrentAP >= 1;
 
         /// <summary>Seconds until the dash is ready again (0 when ready). Handy for a UI cooldown indicator.</summary>
         public float DashCooldownRemaining => Mathf.Max(_dashCooldownTimer, 0f);
@@ -218,6 +227,17 @@ namespace StarterAssets
             Debug.LogError("Starter Assets package is missing dependencies. Please use Tools/Starter Assets/Reinstall Dependencies to fix it");
 #endif
 
+            // find the action point manager: on the player first, otherwise anywhere in the scene
+            actionPointManager = GetComponent<ActionPointManager>();
+            if (actionPointManager == null)
+            {
+                actionPointManager = FindObjectOfType<ActionPointManager>();
+            }
+            if (actionPointManager == null)
+            {
+                Debug.LogWarning("FirstPersonController: no ActionPointManager found. AP abilities (wall run, wall jump, air jump, dash) will be unavailable.");
+            }
+
             // default to the "Ledge" layer if nothing was assigned in the Inspector
             if (LedgeLayers.value == 0)
             {
@@ -258,6 +278,15 @@ namespace StarterAssets
         private void LateUpdate()
         {
             CameraRotation();
+        }
+
+        /// <summary>Spends one action point. Only call after checking HasAP.</summary>
+        private void SpendAP()
+        {
+            if (actionPointManager != null)
+            {
+                actionPointManager.UseAP();
+            }
         }
 
         private void GroundedCheck()
@@ -405,9 +434,10 @@ namespace StarterAssets
                 _dashCooldownTimer -= Time.deltaTime;
             }
 
-            // start a dash if pressed and off cooldown
-            if (_input.dash && !_isDashing && _dashCooldownTimer <= 0f)
+            // start a dash if pressed, off cooldown, and the player has AP
+            if (_input.dash && !_isDashing && _dashCooldownTimer <= 0f && HasAP)
             {
+                SpendAP();
                 OnDashStart?.Invoke();
                 _isDashing = true;
                 _dashTimer = dashDuration;
@@ -424,7 +454,7 @@ namespace StarterAssets
                 _wallJumpVelocity = Vector3.zero;
             }
 
-            // consume the input so a press during cooldown isn't saved for later
+            // consume the input so a press during cooldown (or with no AP) isn't saved for later
             _input.dash = false;
 
             // run the dash timer
@@ -483,7 +513,7 @@ namespace StarterAssets
                 OnSprintStart?.Invoke();
             }
 
-            if (!_input.sprint || _input.move.magnitude <= 0.0f) 
+            if (!_input.sprint || _input.move.magnitude <= 0.0f)
             {
                 OnSprintComplete?.Invoke();
             }
@@ -538,6 +568,7 @@ namespace StarterAssets
                 _isWallRunning = false;
                 _isVerticalWallRunning = false;
                 _verticalWallRunUsed = false;
+                _wallReattachTimer = 0f;
 
                 // reset the fall timeout timer
                 _fallTimeoutDelta = FallTimeout;
@@ -551,7 +582,7 @@ namespace StarterAssets
                     _verticalVelocity = -2f;
                 }
 
-                // Jump
+                // Jump (the normal ground jump is free - no AP needed)
                 if (_input.jump && _jumpTimeoutDelta <= 0.0f)
                 {
                     // the square root of H * -2 * G = how much velocity needed to reach desired height
@@ -579,42 +610,70 @@ namespace StarterAssets
                     _fallTimeoutDelta -= Time.deltaTime;
                 }
 
+                // count down the delay before a new wall run can start
+                if (_wallReattachTimer > 0f)
+                {
+                    _wallReattachTimer -= Time.deltaTime;
+                }
+
                 UpdateVerticalWallRun();
 
                 // side wall run: touching a side wall, pushing forward, and not running up a wall or dashing
                 bool wasWallRunning = _isWallRunning;
-                _isWallRunning = !_isDashing && !_isVerticalWallRunning && touchingWall && _input.move.y > 0f;
+                bool wantsWallRun = !_isDashing && !_isVerticalWallRunning && touchingWall && _input.move.y > 0f;
 
-                // kill downward momentum when first latching onto the wall
-                if (_isWallRunning && !wasWallRunning && _verticalVelocity < 0f)
+                if (wantsWallRun && !wasWallRunning)
                 {
-                    _verticalVelocity = 0f;
+                    // starting a new wall run costs 1 AP (paid once, not per frame)
+                    if (_wallReattachTimer <= 0f && HasAP)
+                    {
+                        SpendAP();
+                        _isWallRunning = true;
+
+                        // kill downward momentum when first latching onto the wall
+                        if (_verticalVelocity < 0f) _verticalVelocity = 0f;
+                    }
+                    else
+                    {
+                        _isWallRunning = false;
+                    }
+                }
+                else
+                {
+                    // already running: keep going while the conditions hold, no extra cost
+                    _isWallRunning = wantsWallRun;
                 }
 
                 // touching a wall refreshes the air jumps, so you can chain walls
                 if (_isWallRunning || _isVerticalWallRunning) _airJumpsRemaining = doubleJumpCount;
 
-                if (_input.jump)
+                // every airborne jump (wall jumps and air jumps) costs 1 AP
+                if (_input.jump && HasAP)
                 {
                     if (_isVerticalWallRunning)
                     {
                         // jump off the wall in front: up and backwards
+                        SpendAP();
                         _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
                         _wallJumpVelocity = _frontWallNormal * verticalWallJumpBackForce;
                         _isVerticalWallRunning = false;
+                        _wallReattachTimer = wallReattachDelay;
                         jumped = true;
                     }
                     else if (_isWallRunning)
                     {
                         // side wall jump: up and away from the wall
+                        SpendAP();
                         _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
                         _wallJumpVelocity = _wallNormal * wallJumpSideForce;
                         _isWallRunning = false;
+                        _wallReattachTimer = wallReattachDelay;
                         jumped = true;
                     }
                     else if (_airJumpsRemaining > 0)
                     {
                         // air jump (double, triple, ... depending on doubleJumpCount)
+                        SpendAP();
                         _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
                         _airJumpsRemaining--;
                         jumped = true;
@@ -652,9 +711,12 @@ namespace StarterAssets
 
         private void UpdateVerticalWallRun()
         {
-            // start: facing a wall, pushing forward, not dashing, and haven't used the vertical run since last landing
-            if (!_isDashing && !_isVerticalWallRunning && !_verticalWallRunUsed && touchingFrontWall && _input.move.y > 0f)
+            // start: facing a wall, pushing forward, not dashing, haven't used the vertical run since last landing,
+            // not just after a wall jump, and the player has AP (costs 1 AP to start)
+            if (!_isDashing && !_isVerticalWallRunning && !_verticalWallRunUsed && touchingFrontWall && _input.move.y > 0f
+                && _wallReattachTimer <= 0f && HasAP)
             {
+                SpendAP();
                 _isVerticalWallRunning = true;
                 _verticalWallRunUsed = true;
                 _verticalWallRunTimer = verticalWallRunDuration;

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using StarterAssets;
 
 public class StickerSpot : MonoBehaviour
 {
@@ -9,5 +10,6 @@ public class StickerSpot : MonoBehaviour
     {
         stickerPlaced = true;
         OnStickerPlaced?.Invoke();
+        ActionPointManager.instance.RegenAP();
     }
 }

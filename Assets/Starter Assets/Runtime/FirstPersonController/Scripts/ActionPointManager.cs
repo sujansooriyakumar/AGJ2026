@@ -1,11 +1,18 @@
 using UnityEngine;
 
-namespace FireSale
+
+namespace StarterAssets
 {
     public class ActionPointManager : MonoBehaviour
     {
         public int maxAP;
         public int currentAP;
+        public static ActionPointManager instance;
+
+        private void Awake()
+        {
+            instance = this;
+        }
 
         public void UseAP()
         {
