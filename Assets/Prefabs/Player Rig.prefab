@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 1394352876727768322}
   - component: {fileID: 8791052233886277734}
   - component: {fileID: 6688207637485590772}
+  - component: {fileID: 1344195484185058437}
   m_Layer: 8
   m_Name: PlayerCapsule
   m_TagString: Player
@@ -319,6 +320,42 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &1344195484185058437
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3683964926733498665}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75ed2533a0e6a5647b150121eb624f15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StickerController
+  placeStickerInput:
+    m_Name: Place Sticker Input
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 1cb1b5fa-9f67-4723-a611-835f5beabd89
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 4465b407-fa07-4f8b-babb-5f8e21b584f2
+      m_Path: <Mouse>/leftButton
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Place Sticker Input
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  collisionRange: 1.5
+  stickerSpotLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  inRangeOfSticker: 0
+  activeStickerSpot: {fileID: 0}
 --- !u!1 &3866452292637000100
 GameObject:
   m_ObjectHideFlags: 0
