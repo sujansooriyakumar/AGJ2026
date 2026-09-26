@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 8791052233886277734}
   - component: {fileID: 6688207637485590772}
   - component: {fileID: 1344195484185058437}
+  - component: {fileID: 2026533206262101554}
   m_Layer: 8
   m_Name: PlayerCapsule
   m_TagString: Player
@@ -116,6 +117,7 @@ MonoBehaviour:
   cameraTiltSpeed: 8
   wallJumpSideForce: 7
   wallJumpDecay: 10
+  wallReattachDelay: 0.3
   touchingFrontWall: 0
   frontWallCheckDistance: 0.8
   frontWallMinFacing: 0.7
@@ -356,6 +358,20 @@ MonoBehaviour:
     m_Bits: 512
   inRangeOfSticker: 0
   activeStickerSpot: {fileID: 0}
+--- !u!114 &2026533206262101554
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3683964926733498665}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83e6c399d5ce6f346bc3f9c9e7827f41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.StarterAssets::StarterAssets.ActionPointManager
+  maxAP: 5
+  currentAP: 5
 --- !u!1 &3866452292637000100
 GameObject:
   m_ObjectHideFlags: 0
