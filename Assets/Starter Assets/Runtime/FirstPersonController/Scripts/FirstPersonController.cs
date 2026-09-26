@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.Events;
-
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -124,6 +123,7 @@ namespace StarterAssets
 
         public UnityEvent OnSprintStart;
         public UnityEvent OnSprintComplete;
+
 
         // cinemachine
         private float _cinemachineTargetPitch;
