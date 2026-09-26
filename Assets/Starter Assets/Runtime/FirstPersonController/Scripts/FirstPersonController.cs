@@ -55,6 +55,23 @@ namespace StarterAssets
         [Tooltip("Time in seconds after a dash starts before another dash can be used")]
         public float dashCooldown = 1.0f;
 
+        [Header("Ledge Climb")]
+        [Tooltip("Layers whose top surfaces can be climbed onto. Defaults to the 'Ledge' layer if left empty")]
+        public LayerMask LedgeLayers;
+        [Tooltip("How far in front of the player's body to look for a ledge, in metres")]
+        public float ledgeReach = 0.4f;
+        [Tooltip("Lowest ledge (above the player's feet) that triggers a climb. Lower obstacles are left to the CharacterController's step offset")]
+        public float ledgeMinHeight = 0.5f;
+        [Tooltip("Highest ledge (above the player's feet) the player can grab")]
+        public float ledgeMaxHeight = 2.2f;
+        [Tooltip("How long the climb takes in seconds")]
+        public float ledgeClimbDuration = 0.5f;
+        [Tooltip("Fraction of the climb spent moving up; the rest moves forward onto the surface")]
+        [Range(0.1f, 0.9f)]
+        public float ledgeClimbUpPortion = 0.6f;
+        [Tooltip("Allow climbing from the ground (vaulting onto waist/chest-high ledges), not just while airborne")]
+        public bool climbFromGround = true;
+
         [Header("Wallrun")]
         [Tooltip("If the character is touching a wall on either side")]
         public bool touchingWall;
@@ -114,6 +131,12 @@ namespace StarterAssets
         private float _dashCooldownTimer;
         private Vector3 _dashDirection;
 
+        // ledge climb
+        private bool _isClimbing;
+        private float _climbTimer;
+        private Vector3 _climbStart;
+        private Vector3 _climbTarget;
+
         // side wall run
         private bool _isWallRunning;
         private bool _wallOnRight;
@@ -144,6 +167,9 @@ namespace StarterAssets
 
         /// <summary>True while a dash is in progress.</summary>
         public bool IsDashing => _isDashing;
+
+        /// <summary>True while climbing onto a ledge.</summary>
+        public bool IsClimbing => _isClimbing;
 
         private bool IsCurrentDeviceMouse
         {
@@ -176,6 +202,12 @@ namespace StarterAssets
             Debug.LogError("Starter Assets package is missing dependencies. Please use Tools/Starter Assets/Reinstall Dependencies to fix it");
 #endif
 
+            // default to the "Ledge" layer if nothing was assigned in the Inspector
+            if (LedgeLayers.value == 0)
+            {
+                LedgeLayers = LayerMask.GetMask("Ledge");
+            }
+
             // reset our timeouts on start
             _jumpTimeoutDelta = JumpTimeout;
             _fallTimeoutDelta = FallTimeout;
@@ -183,8 +215,21 @@ namespace StarterAssets
 
         private void Update()
         {
-            // run the checks first so jump/gravity use this frame's state
             GroundedCheck();
+
+            // a ledge climb takes full control of the player until it finishes
+            if (_isClimbing)
+            {
+                UpdateLedgeClimb();
+                return;
+            }
+
+            if (TryStartLedgeClimb())
+            {
+                return;
+            }
+
+            // run the checks first so jump/gravity use this frame's state
             WallCheck();
             Dash();
             JumpAndGravity();
@@ -201,6 +246,102 @@ namespace StarterAssets
             // set sphere position, with offset
             Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z);
             Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
+        }
+
+        // offset from transform.position to the bottom of the CharacterController capsule
+        private Vector3 FeetOffset => _controller.center - Vector3.up * (_controller.height * 0.5f);
+
+        private bool TryStartLedgeClimb()
+        {
+            // must be pushing forward, and optionally airborne
+            if (_input.move.y <= 0f) return false;
+            if (Grounded && !climbFromGround) return false;
+
+            float radius = _controller.radius;
+
+            Vector3 forward = transform.forward;
+            forward.y = 0f;
+            forward.Normalize();
+
+            Vector3 feet = transform.position + FeetOffset;
+
+            // cast straight down just in front of the player, from max grab height to min grab height.
+            // if the obstacle is taller than ledgeMaxHeight the ray starts inside it and hits nothing, so no climb.
+            Vector3 origin = feet + forward * (radius + ledgeReach) + Vector3.up * ledgeMaxHeight;
+            float castDistance = ledgeMaxHeight - ledgeMinHeight;
+
+            if (!Physics.Raycast(origin, Vector3.down, out RaycastHit topHit, castDistance, LedgeLayers, QueryTriggerInteraction.Ignore))
+            {
+                return false;
+            }
+
+            // the top must be a walkable, fairly flat surface
+            if (topHit.normal.y < 0.7f) return false;
+
+            // stand one radius past the edge so the whole capsule ends up on the surface
+            Vector3 targetFeet = topHit.point + forward * radius + Vector3.up * 0.05f;
+
+            // make sure the player actually fits on top (no low ceiling or obstacle in the way)
+            int blockers = GroundLayers | WallLayers | LedgeLayers;
+            Vector3 capsuleBottom = targetFeet + Vector3.up * (radius + 0.05f);
+            Vector3 capsuleTop = targetFeet + Vector3.up * (_controller.height - radius);
+            if (Physics.CheckCapsule(capsuleBottom, capsuleTop, radius * 0.95f, blockers, QueryTriggerInteraction.Ignore))
+            {
+                return false;
+            }
+
+            StartLedgeClimb(targetFeet - FeetOffset);
+            return true;
+        }
+
+        private void StartLedgeClimb(Vector3 targetPosition)
+        {
+            _isClimbing = true;
+            _climbTimer = 0f;
+            _climbStart = transform.position;
+            _climbTarget = targetPosition;
+
+            // cancel everything else that could be moving the player
+            _verticalVelocity = 0f;
+            _isDashing = false;
+            _isWallRunning = false;
+            _isVerticalWallRunning = false;
+            _wallJumpVelocity = Vector3.zero;
+            doubleJumpUsed = false;
+
+            // disable the controller so it doesn't collide with the ledge edge while we move the transform directly
+            _controller.enabled = false;
+        }
+
+        private void UpdateLedgeClimb()
+        {
+            _climbTimer += Time.deltaTime;
+            float t = ledgeClimbDuration > 0f ? Mathf.Clamp01(_climbTimer / ledgeClimbDuration) : 1f;
+
+            // two-phase path: straight up to the ledge height, then forward onto the surface
+            Vector3 mid = new Vector3(_climbStart.x, _climbTarget.y, _climbStart.z);
+
+            if (t < ledgeClimbUpPortion)
+            {
+                float upT = Mathf.SmoothStep(0f, 1f, t / ledgeClimbUpPortion);
+                transform.position = Vector3.Lerp(_climbStart, mid, upT);
+            }
+            else
+            {
+                float forwardT = Mathf.SmoothStep(0f, 1f, (t - ledgeClimbUpPortion) / (1f - ledgeClimbUpPortion));
+                transform.position = Vector3.Lerp(mid, _climbTarget, forwardT);
+            }
+
+            // ignore jump/dash presses during the climb so they don't fire the moment it ends
+            _input.jump = false;
+            _input.dash = false;
+
+            if (t >= 1f)
+            {
+                _isClimbing = false;
+                _controller.enabled = true;
+                _verticalVelocity = -2f;
+            }
         }
 
         private void WallCheck()
@@ -519,10 +660,10 @@ namespace StarterAssets
 
             Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius);
 
-            // draw the wall check rays
             CharacterController controller = GetComponent<CharacterController>();
             if (controller == null) return;
 
+            // draw the wall check rays
             Vector3 origin = transform.position + Vector3.up * (controller.height * 0.5f);
 
             Gizmos.color = touchingWall ? Color.cyan : Color.yellow;
@@ -531,6 +672,18 @@ namespace StarterAssets
 
             Gizmos.color = touchingFrontWall ? Color.magenta : Color.yellow;
             Gizmos.DrawLine(origin, origin + transform.forward * frontWallCheckDistance);
+
+            // draw the ledge detection ray (from max grab height down to min grab height)
+            Vector3 forward = transform.forward;
+            forward.y = 0f;
+            forward.Normalize();
+
+            Vector3 feet = transform.position + controller.center - Vector3.up * (controller.height * 0.5f);
+            Vector3 ledgeTop = feet + forward * (controller.radius + ledgeReach) + Vector3.up * ledgeMaxHeight;
+            Vector3 ledgeBottom = feet + forward * (controller.radius + ledgeReach) + Vector3.up * ledgeMinHeight;
+
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(ledgeTop, ledgeBottom);
         }
     }
 }
