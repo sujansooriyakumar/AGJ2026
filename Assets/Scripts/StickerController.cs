@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -8,6 +9,8 @@ public class StickerController : MonoBehaviour
     public LayerMask stickerSpotLayer;
     public bool inRangeOfSticker;
     public GameObject activeStickerSpot;
+    public GameObject stickerPrefab;
+    public Transform stickerSpawnLocation;
 
     private void Awake()
     {
@@ -19,6 +22,7 @@ public class StickerController : MonoBehaviour
     {
         if (!inRangeOfSticker) return;
         if(activeStickerSpot != null) activeStickerSpot.GetComponent<StickerSpot>().StickerPlaced();
+        StartCoroutine(StickerCoroutine(activeStickerSpot.GetComponent<StickerSpot>().targetPosition.transform.position));
 
     }
 
@@ -34,6 +38,20 @@ public class StickerController : MonoBehaviour
         else
         {
             activeStickerSpot = null;
+        }
+    }
+
+    private IEnumerator StickerCoroutine(Vector3 target)
+    {
+        GameObject sticker = Instantiate(stickerPrefab, stickerSpawnLocation.position, Quaternion.identity);
+        while (true)
+        {
+            sticker.transform.position = Vector3.MoveTowards(sticker.transform.position, target, 30f*Time.fixedDeltaTime);
+            if(sticker.transform.position == target)
+            {
+                break;
+            }
+            yield return null;
         }
     }
 }

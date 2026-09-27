@@ -36,6 +36,7 @@ namespace StarterAssets
         public float FallTimeout = 0.15f;
 
         [Header("Jump Feel")]
+        [Tooltip("Grace period after leaving the ground (walking or dashing off an edge) during which a normal jump still works")]
         public float coyoteTime = 0.15f;
         [Tooltip("How long a jump press is remembered. Pressing jump slightly before landing will still jump")]
         public float jumpBufferTime = 0.15f;
@@ -923,6 +924,7 @@ namespace StarterAssets
                         _isVerticalWallRunning = false;
                         _wallReattachTimer = wallReattachDelay;
                         _airControlLockTimer = wallJumpAirControlLockTime;
+                        _airJumpsRemaining = doubleJumpCount;
                         StartWallJumpTurn(_frontWallNormal);
                         jumped = true;
                     }
@@ -939,6 +941,7 @@ namespace StarterAssets
                         _isWallRunning = false;
                         _wallReattachTimer = wallReattachDelay;
                         _airControlLockTimer = wallJumpAirControlLockTime;
+                        _airJumpsRemaining = doubleJumpCount;
                         jumped = true;
                     }
                     else if (_coyoteTimer > 0f)
