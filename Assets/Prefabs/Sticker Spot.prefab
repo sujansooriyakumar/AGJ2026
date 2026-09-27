@@ -154,7 +154,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
   targetPosition: {fileID: 6053263289133450620}
-  FX: {fileID: 0}
+  FX: {fileID: 6042284410407278957}
 --- !u!65 &1328006090335756433
 BoxCollider:
   m_ObjectHideFlags: 0
