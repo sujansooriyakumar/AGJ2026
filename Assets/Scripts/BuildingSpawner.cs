@@ -20,6 +20,7 @@ public class BuildingSpawner : MonoBehaviour
     [SerializeField] private float laneHalfWidth = 5f;
     [SerializeField] private float xJitter = 0.5f;
     [SerializeField] private bool startOnRight = false;
+    [SerializeField, Range(0f, 1f)] private float alternateChance = 0.75f;
 
     [Header("Start")]
     [SerializeField] private float startZ = 0f;
@@ -110,7 +111,8 @@ public class BuildingSpawner : MonoBehaviour
 
         float gap = easy ? minGap : Random.Range(minGap, maxGap);
         nextSpawnZ = endZ + gap;
-        nextOnRight = !nextOnRight;
+        bool alternate = easy || Random.value < alternateChance;
+        nextOnRight = alternate ? !isRight : isRight;
         spawnedCount++;
     }
 
@@ -127,6 +129,7 @@ public class BuildingSpawner : MonoBehaviour
 
     private void Despawn(ActiveBuilding building)
     {
+        building.instance.GetComponentInChildren<StickerSpot>().DisplayFX();
         building.instance.SetActive(false);
         (building.isRight ? rightPool : leftPool).Enqueue(building.instance);
     }

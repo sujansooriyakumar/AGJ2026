@@ -58443,14 +58443,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1766778517860590266, guid: 306eb3f3543a6e842a254bb2763dc678, type: 3}
-      propertyPath: wallRunCostDelay
-      value: 0.75
-      objectReference: {fileID: 0}
-    - target: {fileID: 1766778517860590266, guid: 306eb3f3543a6e842a254bb2763dc678, type: 3}
-      propertyPath: fallGravityMultiplier
-      value: 1.15
-      objectReference: {fileID: 0}
     - target: {fileID: 2954756628223324105, guid: 306eb3f3543a6e842a254bb2763dc678, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.8195667
@@ -58489,14 +58481,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2954756628223324105, guid: 306eb3f3543a6e842a254bb2763dc678, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025776730390664351, guid: 306eb3f3543a6e842a254bb2763dc678, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4551713124144815583, guid: 306eb3f3543a6e842a254bb2763dc678, type: 3}
-      propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5069377715276063616, guid: 306eb3f3543a6e842a254bb2763dc678, type: 3}
@@ -290937,6 +290921,7 @@ MonoBehaviour:
   laneHalfWidth: 5
   xJitter: 0.5
   startOnRight: 0
+  alternateChance: 0.75
   startZ: -75
   easyStartBuildings: 3
 --- !u!4 &1271125582
