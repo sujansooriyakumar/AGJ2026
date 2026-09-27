@@ -130,6 +130,7 @@ public class BuildingSpawner : MonoBehaviour
     private void Despawn(ActiveBuilding building)
     {
         building.instance.GetComponentInChildren<StickerSpot>().DisplayFX();
+        building.instance.GetComponentInChildren<StickerSpot>().stickerPlaced = false;
         building.instance.SetActive(false);
         (building.isRight ? rightPool : leftPool).Enqueue(building.instance);
     }

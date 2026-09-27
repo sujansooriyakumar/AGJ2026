@@ -21,8 +21,17 @@ public class StickerController : MonoBehaviour
     private void PlaceSticker(InputAction.CallbackContext callbackContext)
     {
         if (!inRangeOfSticker) return;
-        if(activeStickerSpot != null) activeStickerSpot.GetComponent<StickerSpot>().StickerPlaced();
-        StartCoroutine(StickerCoroutine(activeStickerSpot.GetComponent<StickerSpot>().targetPosition.transform.position));
+        if (activeStickerSpot != null)
+        {
+            StickerSpot stickerSpot = activeStickerSpot.GetComponent<StickerSpot>();
+            if (stickerSpot.stickerPlaced == false)
+            {
+                StartCoroutine(StickerCoroutine(stickerSpot.targetPosition.transform));
+
+                stickerSpot.StickerPlaced();
+            }
+        }
+
 
     }
 
@@ -41,17 +50,19 @@ public class StickerController : MonoBehaviour
         }
     }
 
-    private IEnumerator StickerCoroutine(Vector3 target)
+    private IEnumerator StickerCoroutine(Transform target)
     {
-        GameObject sticker = Instantiate(stickerPrefab, stickerSpawnLocation.position, Quaternion.identity);
-        while (true)
+        GameObject sticker = Instantiate(stickerPrefab, stickerSpawnLocation.position, target.rotation);
+        Transform t = sticker.transform;
+
+        while (t.position != target.position)
         {
-            sticker.transform.position = Vector3.MoveTowards(sticker.transform.position, target, 30f*Time.fixedDeltaTime);
-            if(sticker.transform.position == target)
-            {
-                break;
-            }
+            t.position = Vector3.MoveTowards(t.position, target.position, 30f * Time.deltaTime);
+            t.rotation = target.rotation; // follow the target's current world rotation
             yield return null;
         }
+
+        // Snap exactly on arrival
+        t.SetPositionAndRotation(target.position, target.rotation);
     }
 }
