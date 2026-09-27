@@ -110,6 +110,8 @@ namespace StarterAssets
         public float verticalWallRunDuration = 0.6f;
         [Tooltip("Backward push away from the wall when jumping off during a vertical wall run")]
         public float verticalWallJumpBackForce = 6f;
+        [Tooltip("How far the camera pitches up (degrees) while running up a wall, so it feels like your feet are on the wall")]
+        public float verticalWallRunCameraPitch = 20f;
 
         [Header("Cinemachine")]
         [Tooltip("The follow target set in the Cinemachine Virtual Camera that the camera will follow")]
@@ -130,6 +132,7 @@ namespace StarterAssets
         // cinemachine
         private float _cinemachineTargetPitch;
         private float _cameraRoll;
+        private float _cameraPitchOffset;
 
         // player
         private float _speed;
@@ -301,7 +304,6 @@ namespace StarterAssets
 
         private bool TryStartLedgeClimb()
         {
-            // must be pushing forward, and optionally airborne
             if (_input.move.y <= 0f) return false;
             if (Grounded && !climbFromGround) return false;
 
@@ -313,8 +315,7 @@ namespace StarterAssets
 
             Vector3 feet = transform.position + FeetOffset;
 
-            // cast straight down just in front of the player, from max grab height to min grab height.
-            // if the obstacle is taller than ledgeMaxHeight the ray starts inside it and hits nothing, so no climb.
+         
             Vector3 origin = feet + forward * (radius + ledgeReach) + Vector3.up * ledgeMaxHeight;
             float castDistance = ledgeMaxHeight - ledgeMinHeight;
 
@@ -323,13 +324,10 @@ namespace StarterAssets
                 return false;
             }
 
-            // the top must be a walkable, fairly flat surface
             if (topHit.normal.y < 0.7f) return false;
 
-            // stand one radius past the edge so the whole capsule ends up on the surface
             Vector3 targetFeet = topHit.point + forward * radius + Vector3.up * 0.05f;
 
-            // make sure the player actually fits on top (no low ceiling or obstacle in the way)
             int blockers = GroundLayers | WallLayers | LedgeLayers;
             Vector3 capsuleBottom = targetFeet + Vector3.up * (radius + 0.05f);
             Vector3 capsuleTop = targetFeet + Vector3.up * (_controller.height - radius);
@@ -349,7 +347,6 @@ namespace StarterAssets
             _climbStart = transform.position;
             _climbTarget = targetPosition;
 
-            // cancel everything else that could be moving the player
             _verticalVelocity = 0f;
             _isDashing = false;
             _isWallRunning = false;
@@ -357,7 +354,6 @@ namespace StarterAssets
             _wallJumpVelocity = Vector3.zero;
             _airJumpsRemaining = doubleJumpCount;
 
-            // disable the controller so it doesn't collide with the ledge edge while we move the transform directly
             _controller.enabled = false;
         }
 
@@ -366,7 +362,6 @@ namespace StarterAssets
             _climbTimer += Time.deltaTime;
             float t = ledgeClimbDuration > 0f ? Mathf.Clamp01(_climbTimer / ledgeClimbDuration) : 1f;
 
-            // two-phase path: straight up to the ledge height, then forward onto the surface
             Vector3 mid = new Vector3(_climbStart.x, _climbTarget.y, _climbStart.z);
 
             if (t < ledgeClimbUpPortion)
@@ -380,7 +375,6 @@ namespace StarterAssets
                 transform.position = Vector3.Lerp(mid, _climbTarget, forwardT);
             }
 
-            // ignore jump/dash presses during the climb so they don't fire the moment it ends
             _input.jump = false;
             _input.dash = false;
 
@@ -400,10 +394,8 @@ namespace StarterAssets
 
             Vector3 origin = transform.position + Vector3.up * (_controller.height * 0.5f);
 
-            // front wall (vertical wall run)
             if (Physics.Raycast(origin, transform.forward, out RaycastHit frontHit, frontWallCheckDistance, WallLayers, QueryTriggerInteraction.Ignore))
             {
-                // only count it if we're facing the wall fairly head-on
                 if (Vector3.Dot(transform.forward, -frontHit.normal) >= frontWallMinFacing)
                 {
                     touchingFrontWall = true;
@@ -411,7 +403,6 @@ namespace StarterAssets
                 }
             }
 
-            // side walls (horizontal wall run)
             if (Physics.Raycast(origin, transform.right, out RaycastHit hit, wallCheckDistance, WallLayers, QueryTriggerInteraction.Ignore))
             {
                 touchingWall = true;
@@ -428,13 +419,11 @@ namespace StarterAssets
 
         private void Dash()
         {
-            // count down the cooldown
             if (_dashCooldownTimer > 0f)
             {
                 _dashCooldownTimer -= Time.deltaTime;
             }
 
-            // start a dash if pressed, off cooldown, and the player has AP
             if (_input.dash && !_isDashing && _dashCooldownTimer <= 0f && HasAP)
             {
                 SpendAP();
@@ -443,21 +432,17 @@ namespace StarterAssets
                 _dashTimer = dashDuration;
                 _dashCooldownTimer = dashCooldown;
 
-                // dash in the direction the player is facing, flattened so looking up/down doesn't matter
                 _dashDirection = transform.forward;
                 _dashDirection.y = 0f;
                 _dashDirection.Normalize();
 
-                // a dash overrides any wall run or leftover wall jump push
                 _isWallRunning = false;
                 _isVerticalWallRunning = false;
                 _wallJumpVelocity = Vector3.zero;
             }
 
-            // consume the input so a press during cooldown (or with no AP) isn't saved for later
             _input.dash = false;
 
-            // run the dash timer
             if (_isDashing)
             {
                 _dashTimer -= Time.deltaTime;
@@ -471,42 +456,40 @@ namespace StarterAssets
 
         private void CameraRotation()
         {
-            // if there is an input
             if (_input.look.sqrMagnitude >= _threshold)
             {
-                //Don't multiply mouse input by Time.deltaTime
                 float deltaTimeMultiplier = IsCurrentDeviceMouse ? 1.0f : Time.deltaTime;
 
                 _cinemachineTargetPitch += _input.look.y * RotationSpeed * deltaTimeMultiplier;
                 _rotationVelocity = _input.look.x * RotationSpeed * deltaTimeMultiplier;
 
-                // clamp our pitch rotation
                 _cinemachineTargetPitch = ClampAngle(_cinemachineTargetPitch, BottomClamp, TopClamp);
 
-                // rotate the player left and right
                 transform.Rotate(Vector3.up * _rotationVelocity);
             }
 
-            // tilt away from the wall while side wall running (flip the sign if it leans the wrong way)
             float targetRoll = 0f;
             if (_isWallRunning) targetRoll = _wallOnRight ? wallRunCameraTilt : -wallRunCameraTilt;
 
             _cameraRoll = Mathf.Lerp(_cameraRoll, targetRoll, Time.deltaTime * cameraTiltSpeed);
 
-            // apply pitch and roll every frame so the tilt is never overwritten
-            CinemachineCameraTarget.transform.localRotation = Quaternion.Euler(_cinemachineTargetPitch, 0.0f, _cameraRoll);
+
+            float targetPitchOffset = _isVerticalWallRunning ? verticalWallRunCameraPitch : 0f;
+            _cameraPitchOffset = Mathf.Lerp(_cameraPitchOffset, targetPitchOffset, Time.deltaTime * cameraTiltSpeed);
+
+            float finalPitch = ClampAngle(_cinemachineTargetPitch - _cameraPitchOffset, BottomClamp, TopClamp);
+
+            CinemachineCameraTarget.transform.localRotation = Quaternion.Euler(finalPitch, 0.0f, _cameraRoll);
         }
 
         private void Move()
         {
-            // while dashing, ignore normal movement and go straight along the dash direction
             if (_isDashing)
             {
                 _controller.Move((_dashDirection * dashSpeed + new Vector3(0.0f, _verticalVelocity, 0.0f)) * Time.deltaTime);
                 return;
             }
 
-            // set target speed based on move speed, sprint speed and if sprint is pressed
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
             if (_input.sprint && _input.move.magnitude > 0.0f)
             {
@@ -517,24 +500,19 @@ namespace StarterAssets
             {
                 OnSprintComplete?.Invoke();
             }
-            // if there is no input, set the target speed to 0
             if (_input.move == Vector2.zero) targetSpeed = 0.0f;
 
-            // a reference to the players current horizontal velocity (excluding the wall jump push)
             Vector3 horizontalVelocity = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z) - _wallJumpVelocity;
             float currentHorizontalSpeed = horizontalVelocity.magnitude;
 
             float speedOffset = 0.1f;
             float inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f;
 
-            // accelerate or decelerate to target speed
-            // (after a dash this also eases the player back down from dash speed)
+
             if (currentHorizontalSpeed < targetSpeed - speedOffset || currentHorizontalSpeed > targetSpeed + speedOffset)
             {
-                // creates curved result rather than a linear one giving a more organic speed change
                 _speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude, Time.deltaTime * SpeedChangeRate);
 
-                // round speed to 3 decimal places
                 _speed = Mathf.Round(_speed * 1000f) / 1000f;
             }
             else
@@ -542,19 +520,15 @@ namespace StarterAssets
                 _speed = targetSpeed;
             }
 
-            // normalise input direction
             Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
 
-            // if there is a move input, move relative to the player's facing
             if (_input.move != Vector2.zero)
             {
                 inputDirection = transform.right * _input.move.x + transform.forward * _input.move.y;
             }
 
-            // fade out the wall jump push over time
             _wallJumpVelocity = Vector3.MoveTowards(_wallJumpVelocity, Vector3.zero, wallJumpDecay * Time.deltaTime);
 
-            // move the player
             _controller.Move(inputDirection.normalized * (_speed * Time.deltaTime)
                 + (_wallJumpVelocity + new Vector3(0.0f, _verticalVelocity, 0.0f)) * Time.deltaTime);
         }
@@ -570,30 +544,23 @@ namespace StarterAssets
                 _verticalWallRunUsed = false;
                 _wallReattachTimer = 0f;
 
-                // reset the fall timeout timer
                 _fallTimeoutDelta = FallTimeout;
 
-                // landed, so all air jumps are available again
                 _airJumpsRemaining = doubleJumpCount;
 
-                // stop our velocity dropping infinitely when grounded
                 if (_verticalVelocity < 0.0f)
                 {
                     _verticalVelocity = -2f;
                 }
 
-                // Jump (the normal ground jump is free - no AP needed)
                 if (_input.jump && _jumpTimeoutDelta <= 0.0f)
                 {
-                    // the square root of H * -2 * G = how much velocity needed to reach desired height
                     _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
                     jumped = true;
 
-                    // consume the input so the same press doesn't also trigger the double jump
                     _input.jump = false;
                 }
 
-                // jump timeout
                 if (_jumpTimeoutDelta >= 0.0f)
                 {
                     _jumpTimeoutDelta -= Time.deltaTime;
@@ -601,16 +568,13 @@ namespace StarterAssets
             }
             else
             {
-                // reset the jump timeout timer
                 _jumpTimeoutDelta = JumpTimeout;
 
-                // fall timeout
                 if (_fallTimeoutDelta >= 0.0f)
                 {
                     _fallTimeoutDelta -= Time.deltaTime;
                 }
 
-                // count down the delay before a new wall run can start
                 if (_wallReattachTimer > 0f)
                 {
                     _wallReattachTimer -= Time.deltaTime;
@@ -618,19 +582,16 @@ namespace StarterAssets
 
                 UpdateVerticalWallRun();
 
-                // side wall run: touching a side wall, pushing forward, and not running up a wall or dashing
                 bool wasWallRunning = _isWallRunning;
                 bool wantsWallRun = !_isDashing && !_isVerticalWallRunning && touchingWall && _input.move.y > 0f;
 
                 if (wantsWallRun && !wasWallRunning)
                 {
-                    // starting a new wall run costs 1 AP (paid once, not per frame)
                     if (_wallReattachTimer <= 0f && HasAP)
                     {
                         SpendAP();
                         _isWallRunning = true;
 
-                        // kill downward momentum when first latching onto the wall
                         if (_verticalVelocity < 0f) _verticalVelocity = 0f;
                     }
                     else
@@ -640,19 +601,15 @@ namespace StarterAssets
                 }
                 else
                 {
-                    // already running: keep going while the conditions hold, no extra cost
                     _isWallRunning = wantsWallRun;
                 }
 
-                // touching a wall refreshes the air jumps, so you can chain walls
                 if (_isWallRunning || _isVerticalWallRunning) _airJumpsRemaining = doubleJumpCount;
 
-                // every airborne jump (wall jumps and air jumps) costs 1 AP
                 if (_input.jump && HasAP)
                 {
                     if (_isVerticalWallRunning)
                     {
-                        // jump off the wall in front: up and backwards
                         SpendAP();
                         _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
                         _wallJumpVelocity = _frontWallNormal * verticalWallJumpBackForce;
@@ -662,7 +619,6 @@ namespace StarterAssets
                     }
                     else if (_isWallRunning)
                     {
-                        // side wall jump: up and away from the wall
                         SpendAP();
                         _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
                         _wallJumpVelocity = _wallNormal * wallJumpSideForce;
@@ -672,7 +628,6 @@ namespace StarterAssets
                     }
                     else if (_airJumpsRemaining > 0)
                     {
-                        // air jump (double, triple, ... depending on doubleJumpCount)
                         SpendAP();
                         _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
                         _airJumpsRemaining--;
@@ -680,22 +635,17 @@ namespace StarterAssets
                     }
                 }
 
-                // always consume jump input while airborne
                 _input.jump = false;
             }
 
-            // jumping cancels a dash early (the dash speed then eases off through Move's speed lerp)
             if (jumped) _isDashing = false;
 
-            // apply gravity
             if (_isDashing)
             {
-                // dash travels in a flat line: stay pinned to the ground, or hold height in the air
                 _verticalVelocity = Grounded ? -2f : 0f;
             }
             else if (_isVerticalWallRunning)
             {
-                // run straight up the wall at a constant speed
                 _verticalVelocity = verticalWallRunSpeed;
             }
             else if (_isWallRunning)
@@ -711,8 +661,6 @@ namespace StarterAssets
 
         private void UpdateVerticalWallRun()
         {
-            // start: facing a wall, pushing forward, not dashing, haven't used the vertical run since last landing,
-            // not just after a wall jump, and the player has AP (costs 1 AP to start)
             if (!_isDashing && !_isVerticalWallRunning && !_verticalWallRunUsed && touchingFrontWall && _input.move.y > 0f
                 && _wallReattachTimer <= 0f && HasAP)
             {
@@ -726,8 +674,6 @@ namespace StarterAssets
 
             _verticalWallRunTimer -= Time.deltaTime;
 
-            // stop when time runs out, the wall ends (e.g. reached a ledge), or the player lets go of forward.
-            // the leftover upward velocity carries the player over a ledge naturally.
             if (_verticalWallRunTimer <= 0f || !touchingFrontWall || _input.move.y <= 0f)
             {
                 _isVerticalWallRunning = false;
@@ -754,7 +700,6 @@ namespace StarterAssets
             CharacterController controller = GetComponent<CharacterController>();
             if (controller == null) return;
 
-            // draw the wall check rays
             Vector3 origin = transform.position + Vector3.up * (controller.height * 0.5f);
 
             Gizmos.color = touchingWall ? Color.cyan : Color.yellow;
@@ -764,7 +709,6 @@ namespace StarterAssets
             Gizmos.color = touchingFrontWall ? Color.magenta : Color.yellow;
             Gizmos.DrawLine(origin, origin + transform.forward * frontWallCheckDistance);
 
-            // draw the ledge detection ray (from max grab height down to min grab height)
             Vector3 forward = transform.forward;
             forward.y = 0f;
             forward.Normalize();
