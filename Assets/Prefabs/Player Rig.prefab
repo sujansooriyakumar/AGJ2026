@@ -83,20 +83,29 @@ MonoBehaviour:
   SprintSpeed: 15
   RotationSpeed: 1
   SpeedChangeRate: 10
-  JumpHeight: 1.2
+  JumpHeight: 8.16
   Gravity: -15
   JumpTimeout: 0.1
   FallTimeout: 0.15
+  coyoteTime: 0.15
+  jumpBufferTime: 0.15
+  fallGravityMultiplier: 1.22
+  variableJumpHeight: 1
+  jumpCutMultiplier: 0.5
+  airControl: 0.35
+  airDrag: 0.3
   Grounded: 1
   GroundedOffset: -0.14
   GroundedRadius: 0.5
   GroundLayers:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 193
+  excludeWallsFromGroundCheck: 1
   doubleJumpCount: 1
   dashSpeed: 20
-  dashDuration: 0.2
+  dashDuration: 0.7
   dashCooldown: 1
+  dashExitSpeedMultiplier: 0.5
   LedgeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -110,23 +119,44 @@ MonoBehaviour:
   WallLayers:
     serializedVersion: 2
     m_Bits: 64
-  wallCheckDistance: 0.58
+  wallCheckDistance: 1
   wallRunGravityMultiplier: 0.25
-  wallRunMaxFallSpeed: 2
+  wallRunMaxFallSpeed: 0
+  wallRunCatchStrength: 40
+  wallRunCostDelay: 0.15
   wallRunCameraTilt: 15
   cameraTiltSpeed: 8
-  wallJumpSideForce: 7
-  wallJumpDecay: 10
+  wallJumpSideForce: 20
   wallReattachDelay: 0.3
+  wallJumpAirControlLockTime: 0.3
+  wallJumpAirControlMultiplier: 0.1
+  rotateOnWallJump: 0
+  wallJumpTurnDuration: 0.15
+  wallJumpTurnCancelOnLook: 1
+  wallJumpTurnCancelThreshold: 2
   touchingFrontWall: 0
   frontWallCheckDistance: 0.8
-  frontWallMinFacing: 0.7
+  frontWallMinFacing: 0.265
   verticalWallRunSpeed: 6
-  verticalWallRunDuration: 0.6
-  verticalWallJumpBackForce: 6
+  verticalWallRunEndSpeedFraction: 0.35
+  verticalWallRunAcceleration: 60
+  verticalWallRunDuration: 2
+  verticalWallJumpBackForce: 9
+  verticalWallRunCameraPitch: 90
   CinemachineCameraTarget: {fileID: 6531276029317704403}
   TopClamp: 89
   BottomClamp: -89
+  fovCamera: {fileID: 0}
+  sprintFovBoost: 5
+  wallRunFovBoost: 6
+  dashFovBoost: 12
+  fovChangeSpeed: 8
+  headBobAmount: 0.05
+  headBobFrequency: 10
+  landingDipAmount: 0.15
+  landingDipMinFallSpeed: 5
+  landingDipFullFallSpeed: 15
+  landingRecoverSpeed: 8
   OnDashStart:
     m_PersistentCalls:
       m_Calls:
@@ -352,12 +382,14 @@ MonoBehaviour:
       m_Flags: 0
     m_Flags: 0
     m_Priority: 0
-  collisionRange: 1.5
+  collisionRange: 10
   stickerSpotLayer:
     serializedVersion: 2
     m_Bits: 512
   inRangeOfSticker: 0
   activeStickerSpot: {fileID: 0}
+  stickerPrefab: {fileID: 3193146725149973972, guid: 1b8213003c3a3574884d3e03f391b141, type: 3}
+  stickerSpawnLocation: {fileID: 2255714675030812206}
 --- !u!114 &2026533206262101554
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -370,8 +402,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83e6c399d5ce6f346bc3f9c9e7827f41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.StarterAssets::StarterAssets.ActionPointManager
-  maxAP: 5
-  currentAP: 5
+  maxAP: 30
+  currentAP: 30
 --- !u!1 &3866452292637000100
 GameObject:
   m_ObjectHideFlags: 0
