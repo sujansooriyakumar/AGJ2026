@@ -7,6 +7,7 @@ public class StickerSpot : MonoBehaviour
     public bool stickerPlaced = false;
     public UnityEvent OnStickerPlaced;
     public GameObject targetPosition;
+    public GameObject FX;
     public void StickerPlaced()
     {
         stickerPlaced = true;
@@ -17,5 +18,10 @@ public class StickerSpot : MonoBehaviour
     private void Start()
     {
         targetPosition.GetComponent<MeshRenderer>().enabled = false;    
+    }
+
+    public void DisplayFX()
+    {
+        FX.SetActive(true);
     }
 }

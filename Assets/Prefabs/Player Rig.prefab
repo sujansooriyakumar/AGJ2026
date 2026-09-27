@@ -89,7 +89,7 @@ MonoBehaviour:
   FallTimeout: 0.15
   coyoteTime: 0.15
   jumpBufferTime: 0.15
-  fallGravityMultiplier: 1.22
+  fallGravityMultiplier: 1.15
   variableJumpHeight: 1
   jumpCutMultiplier: 0.5
   airControl: 0.35
@@ -123,7 +123,7 @@ MonoBehaviour:
   wallRunGravityMultiplier: 0.25
   wallRunMaxFallSpeed: 0
   wallRunCatchStrength: 40
-  wallRunCostDelay: 0.15
+  wallRunCostDelay: 0.75
   wallRunCameraTilt: 15
   cameraTiltSpeed: 8
   wallJumpSideForce: 20
