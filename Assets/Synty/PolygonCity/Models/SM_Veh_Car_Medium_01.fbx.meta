@@ -1,137 +1,15 @@
 fileFormatVersion: 2
-guid: 9e3e05b5e4951d64a9412bf0e557e6d3
+guid: 8bdbb7ee9c4eda0479c0881b9d01292c
 ModelImporter:
-  serializedVersion: 22200
-  internalIDToNameTable:
-  - first:
-      1: 100000
-    second: //RootNode
-  - first:
-      1: 100002
-    second: SM_Veh_Car_Medium_Glass
-  - first:
-      1: 100004
-    second: SM_Veh_Car_Medium_Plates
-  - first:
-      1: 100006
-    second: SM_Veh_Car_Medium_SteeringW
-  - first:
-      1: 100008
-    second: SM_Veh_Car_Medium_Wheel_fl
-  - first:
-      1: 100010
-    second: SM_Veh_Car_Medium_Wheel_fr
-  - first:
-      1: 100012
-    second: SM_Veh_Car_Medium_Wheel_rl
-  - first:
-      1: 100014
-    second: SM_Veh_Car_Medium_Wheel_rr
-  - first:
-      4: 400000
-    second: //RootNode
-  - first:
-      4: 400002
-    second: SM_Veh_Car_Medium_Glass
-  - first:
-      4: 400004
-    second: SM_Veh_Car_Medium_Plates
-  - first:
-      4: 400006
-    second: SM_Veh_Car_Medium_SteeringW
-  - first:
-      4: 400008
-    second: SM_Veh_Car_Medium_Wheel_fl
-  - first:
-      4: 400010
-    second: SM_Veh_Car_Medium_Wheel_fr
-  - first:
-      4: 400012
-    second: SM_Veh_Car_Medium_Wheel_rl
-  - first:
-      4: 400014
-    second: SM_Veh_Car_Medium_Wheel_rr
-  - first:
-      23: 2300000
-    second: //RootNode
-  - first:
-      23: 2300002
-    second: SM_Veh_Car_Medium_Glass
-  - first:
-      23: 2300004
-    second: SM_Veh_Car_Medium_Plates
-  - first:
-      23: 2300006
-    second: SM_Veh_Car_Medium_SteeringW
-  - first:
-      23: 2300008
-    second: SM_Veh_Car_Medium_Wheel_fl
-  - first:
-      23: 2300010
-    second: SM_Veh_Car_Medium_Wheel_fr
-  - first:
-      23: 2300012
-    second: SM_Veh_Car_Medium_Wheel_rl
-  - first:
-      23: 2300014
-    second: SM_Veh_Car_Medium_Wheel_rr
-  - first:
-      33: 3300000
-    second: //RootNode
-  - first:
-      33: 3300002
-    second: SM_Veh_Car_Medium_Glass
-  - first:
-      33: 3300004
-    second: SM_Veh_Car_Medium_Plates
-  - first:
-      33: 3300006
-    second: SM_Veh_Car_Medium_SteeringW
-  - first:
-      33: 3300008
-    second: SM_Veh_Car_Medium_Wheel_fl
-  - first:
-      33: 3300010
-    second: SM_Veh_Car_Medium_Wheel_fr
-  - first:
-      33: 3300012
-    second: SM_Veh_Car_Medium_Wheel_rl
-  - first:
-      33: 3300014
-    second: SM_Veh_Car_Medium_Wheel_rr
-  - first:
-      43: 4300000
-    second: SM_Veh_Car_Medium_01
-  - first:
-      43: 4300002
-    second: SM_Veh_Car_Medium_Wheel_rl
-  - first:
-      43: 4300004
-    second: SM_Veh_Car_Medium_Wheel_rr
-  - first:
-      43: 4300006
-    second: SM_Veh_Car_Medium_Wheel_fl
-  - first:
-      43: 4300008
-    second: SM_Veh_Car_Medium_Wheel_fr
-  - first:
-      43: 4300010
-    second: SM_Veh_Car_Medium_Glass
-  - first:
-      43: 4300012
-    second: SM_Veh_Car_Medium_SteeringW
-  - first:
-      43: 4300014
-    second: SM_Veh_Car_Medium_Plates
-  - first:
-      95: 9500000
-    second: //RootNode
+  serializedVersion: 24600
+  internalIDToNameTable: []
   externalObjects: {}
   materials:
-    materialImportMode: 0
+    materialImportMode: 2
     materialName: 0
     materialSearch: 1
-    materialLocation: 0
+    materialLocation: 1
+    searchTexturesGlobally: 0
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
@@ -139,8 +17,6 @@ ModelImporter:
     optimizeGameObjects: 0
     removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -158,18 +34,20 @@ ModelImporter:
     isReadable: 0
   meshes:
     lODScreenPercentages: []
-    globalScale: 10
+    globalScale: 1
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
     sortHierarchyByName: 1
-    importPhysicalCameras: 0
-    importVisibility: 0
-    importBlendShapes: 0
-    importCameras: 0
-    importLights: 0
-    nodeNameCollisionStrategy: 0
-    fileIdsGeneration: 1
+    preBakeConvexCollisionMesh: 0
+    preBakeTriangleCollisionMesh: 0
+    importPhysicalCameras: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
@@ -181,27 +59,33 @@ ModelImporter:
     maxBonesPerVertex: 4
     minBoneWeight: 0.001
     optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    importUVs: -1
+    importVertexColors: 1
     meshOptimizationFlags: -1
-    indexFormat: 1
+    indexFormat: 0
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
-    secondaryUVMarginMethod: 0
+    secondaryUVMarginMethod: 1
     secondaryUVMinLightmapResolution: 40
     secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
     strictVertexDataChecks: 0
   tangentSpace:
-    normalSmoothAngle: 5
-    normalImportMode: 1
-    tangentImportMode: 1
-    normalCalculationMode: 0
-    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
     blendShapeNormalImportMode: 1
     normalSmoothingSource: 0
+    calculateBlendshapeNormalsDeltaFromImportedNormals: 0
   referencedClips: []
-  importAnimation: 0
+  importAnimation: 1
   humanDescription:
     serializedVersion: 3
     human: []
@@ -213,27 +97,20 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
-    globalScale: 10
+    globalScale: 1
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0
-    skeletonHasParents: 0
+    skeletonHasParents: 1
   lastHumanDescriptionAvatarSource: {instanceID: 0}
   autoGenerateAvatarMappingIfUnspecified: 1
-  animationType: 0
+  animationType: 2
   humanoidOversampling: 1
   avatarSetup: 0
-  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
-  importBlendShapeDeformPercent: 0
-  remapMaterialsIfMaterialImportModeIsNone: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 1
+  remapMaterialsIfMaterialImportModeIsNone: 0
   additionalBone: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 95214
-  packageName: POLYGON - City Pack - Art by Synty
-  packageVersion: 1.12.5
-  assetPath: Assets/Synty/PolygonCity/Models/SM_Veh_Car_Medium_01.fbx
-  uploadId: 998584
